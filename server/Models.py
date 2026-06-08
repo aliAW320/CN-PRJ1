@@ -1,6 +1,6 @@
 Users={}
 files = {}
-online_users = set()
+online_users = {}
 class User :
     def __init__(self, name , password) :
         self.name = name
@@ -14,9 +14,9 @@ class User :
             Users[name] = password
             return True
         
-    def login(name , password) :
+    def login(name , password , client_socket) :
         if name in Users and Users[name] == password and name not in online_users :
-            online_users.add(name)
+            online_users[name] = client_socket
             return True , "ok" ,User(name , password)
         elif name in online_users:
             return False , "user already online" ,None
@@ -26,23 +26,23 @@ class User :
 
     def logout(self) :
         if self.name in online_users :
-            online_users.remove(self.name)
+            del online_users[self.name]
             return True
         else :
             return False 
     def exit(self) :
         if self.name in online_users :
-            online_users.remove(self.name)
+            del online_users[self.name]
             return True
         else :
             return False
-class Message :
-    def __init__(self, sender, receiver, content) :
-        self.sender = sender
-        self.receiver = receiver
-        self.content = content
-    def __str__(self) :
-        return f"Message(sender={self.sender}, receiver={self.receiver}, content={self.content})"
+# class Message :
+#     def __init__(self, sender, receiver, content) :
+#         self.sender = sender
+#         self.receiver = receiver
+#         self.content = content
+#     def __str__(self) :
+#         return f"Message(sender={self.sender}, receiver={self.receiver}, content={self.content})"
 def list_online_users(self) :
     if self.name in online_users :
         online_users_list = list(online_users)

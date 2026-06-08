@@ -1,4 +1,5 @@
-from Models import User, Message, list_online_users
+from Models import User , list_online_users
+from chatController import handle_chat
 def handle_user(client_socket, client_address):
     user = None
     print(f"[USER] Connected: {client_address}")
@@ -11,14 +12,15 @@ def handle_user(client_socket, client_address):
                 if massage[0] == "CTRL":
                    user = CTRL(client_socket, massage ,user)
                 elif massage[0] == "DATA":
-                    DATA(client_socket, massage[1], massage[2], massage[3])
+                    DATA(client_socket, massage , user)
                 else : 
                     pass
                 if massage[1] == 'EXIT' : 
                     break
         except ConnectionResetError:
             print(f"[USER] Disconnected: {client_address}")
-              
+            if user :
+                user.exit()
             client_socket.close()
             break
 
@@ -40,7 +42,7 @@ def CTRL(client_socket, massage , user):
     elif command == "LOGIN":
         name = massage[2]
         password = massage[3]
-        state , login_massage ,user = User.login(name, password)
+        state , login_massage ,user = User.login(name, password , client_socket)
         if state :
             print(f"[LOGIN] User '{name}' logged in successfully.")
             client_socket.send("login success".encode())
@@ -58,7 +60,7 @@ def CTRL(client_socket, massage , user):
             return None
         else:
             print(f"[LOGOUT] Failed to log out user '{user.name}'.")
-            client_socket.send("logout failed".encode())
+            client_socket.send(f"[LOGOUT] Failed to log out user '{user.name}'".encode())
             return user
 
 
@@ -66,7 +68,7 @@ def CTRL(client_socket, massage , user):
         state , online_users = list_online_users(user)
         if state :
             if isinstance(online_users , str):
-                client_socket.send("you are the only user online")
+                client_socket.send("you are the only user online".encode())
             else :
                 client_socket.send(f"online users|{','.join(online_users)}".encode())
         else :
@@ -79,4 +81,9 @@ def CTRL(client_socket, massage , user):
         else :
             client_socket.send("unexpected error".encode())
             return user
-        
+def DATA(client_socket, massage , user):
+    command = massage[1]
+    if command =="CHAT":
+        receiver = massage[2]
+        content = " ".join(massage[3:]) 
+        handle_chat(client_socket, receiver , content , user)

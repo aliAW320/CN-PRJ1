@@ -7,7 +7,7 @@ def listen_to_server(client_socket):
         try:
             data = client_socket.recv(1024).decode()
             if data:
-                print(f"{data}")
+                print(f"\n{data}\n")
         except ConnectionResetError:
             print("Connection to the server was lost.")
             break        
@@ -35,6 +35,8 @@ while True:
         client_socket.send("CTRL|EXIT".encode())
         time.sleep(0.5)
         break
+    elif massage[0] == "CHAT" :
+        client_socket.send(f"DATA|CHAT|{massage[1]}|{" ".join(massage[2:])}".encode())
 
 
 
