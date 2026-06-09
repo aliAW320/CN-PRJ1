@@ -7,6 +7,7 @@ class User :
         self.password = password
     def __str__(self) :
         return f"User(name={self.name})"
+    
     def register(name , password) :
         if name in Users :
             return False
@@ -14,8 +15,9 @@ class User :
             Users[name] = password
             return True
         
+    
     def login(name , password , client_socket) :
-        if name in Users and Users[name] == password and name not in online_users :
+        if (name in Users )and (Users[name] == password) and (name not in online_users) :
             online_users[name] = client_socket
             return True , "ok" ,User(name , password)
         elif name in online_users:
@@ -52,4 +54,3 @@ def list_online_users(self) :
         return True , online_users_list
     else :
         return False , None
-    
