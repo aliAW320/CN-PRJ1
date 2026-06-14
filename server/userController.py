@@ -13,7 +13,7 @@ def handle_user(client_socket, client_address):
                 if massage[0] == "CTRL":
                    user = CTRL(client_socket, massage ,user)
                 elif massage[0] == "DATA":
-                    DATA(client_socket, massage , user)
+                   user = DATA(client_socket, massage , user)
                 else : 
                     pass
                 if massage[1] == 'EXIT' : 
@@ -46,7 +46,7 @@ def CTRL(client_socket, massage , user):
         state , login_massage ,user = Models.User.login(name, password , client_socket)
         if state :
             print(f"[LOGIN] User '{name}' logged in successfully.")
-            client_socket.send("login success".encode())
+            client_socket.send(f"login success {user.name}".encode())
             return user
         else:
             print(f"[LOGIN] Failed to log in user  '{name}' , {login_massage}")
@@ -112,12 +112,23 @@ def CTRL(client_socket, massage , user):
             reciver_socket.send(f"User '{user.name}' want share a file with you: {file_name}".encode())
             return user
 
-    elif command == "REJECT_FILE" :
-        file_name = massage[2]
-        sender = massage[3]
-        remove_share_file(file_name, sender , user.name)
-        reciver_socket = Models.online_users[reciver]
-        sender_socket.send(f"User '{user.name}' rejected your file share request: {file_name}".encode())
+    
+
+    
+
+    elif command == "EXIT":
+        if user.exit() :
+            client_socket.send("GOODBYE".encode())
+            client_socket.close()
+        else :
+            client_socket.send("unexpected error".encode())
+            return user
+def DATA(client_socket, massage , user):
+    command = massage[1]
+    if command =="CHAT":
+        receiver = massage[2]
+        content = " ".join(massage[3:]) 
+        handle_chat(client_socket, receiver , content , user)
         return user
 
     elif command == "ACCEPT_FILE" :
@@ -133,17 +144,13 @@ def CTRL(client_socket, massage , user):
         if sender_socket:
             sender_socket.send(f"User '{user.name}' accepted your file share request: {file_name}".encode())
         return user
+    
+    elif command == "REJECT_FILE" :
+        file_name = massage[2]
+        sender = massage[3]
+        remove_share_file(file_name, sender , user.name)
+        reciver_socket = Models.online_users[reciver]
+        sender_socket.send(f"User '{user.name}' rejected your file share request: {file_name}".encode())
+        return user
+    
 
-    elif command == "EXIT":
-        if user.exit() :
-            client_socket.send("GOODBYE".encode())
-            client_socket.close()
-        else :
-            client_socket.send("unexpected error".encode())
-            return user
-def DATA(client_socket, massage , user):
-    command = massage[1]
-    if command =="CHAT":
-        receiver = massage[2]
-        content = " ".join(massage[3:]) 
-        handle_chat(client_socket, receiver , content , user)

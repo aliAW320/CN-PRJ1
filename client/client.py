@@ -2,7 +2,6 @@ import socket
 import time
 import threading
 from files import sendFile, select_file, recive_file
-
 file_transfer_active = False
 
 def listen_to_server(client_socket):
@@ -10,7 +9,6 @@ def listen_to_server(client_socket):
     print("Listening for messages from the server...")
     while True:
         try:
-            # اگر دانلودی در جریان است، این ترد به سوکت دست نمی‌زند
             if file_transfer_active:
                 time.sleep(0.1)
                 continue
@@ -18,6 +16,8 @@ def listen_to_server(client_socket):
             data = client_socket.recv(1024).decode()
             if data:
                 print(f"\n{data}\n")
+                if data.startswith("login success"):
+                    user = data.split("")[-1]  
         except socket.timeout:
             pass
         except ConnectionResetError:
@@ -82,26 +82,22 @@ while True:
     elif command == "REJECT_FILE":
         file_name = massage[1]
         sender = massage[2]
-        client_socket.send(f"CTRL|REJECT_FILE|{file_name}|{sender}".encode())
+        client_socket.send(f"DATA|REJECT_FILE|{file_name}|{sender}".encode())
 
     elif command == "ACCEPT_FILE":
         file_name = massage[1]
         sender = massage[2]
         
-        # ۱. قفل کردن ترد پس‌زمینه برای جلوگیری از تداخل سوکت
         file_transfer_active = True
         time.sleep(0.3) 
         
-        # ۲. اعلام پذیرش به سرور
-        client_socket.send(f"CTRL|ACCEPT_FILE|{file_name}|{sender}".encode())
+        client_socket.send(f"DATA|ACCEPT_FILE|{file_name}|{sender}".encode())
         
         try:
-            # ۳. فراخوانی تابع دانلود بدون ریسک لوپ بی‌نهایت
-            recive_file(client_socket, file_name, sender)
+            recive_file(client_socket, file_name, sender )
         except Exception as e:
             print(f"Error during file receive: {e}")
         finally:
-            # ۴. آزادسازی مجدد سوکت و ترد پس‌زمینه بعد از اتمام دانلود
             file_transfer_active = False
             client_socket.settimeout(0.2)
                 
