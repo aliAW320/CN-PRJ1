@@ -1,3 +1,5 @@
+from pydoc import cli
+
 import Models
 from chatController import handle_chat
 from fileController import reciveFile , giveUserFiles , fileShareRequest , remove_share_file , send_to_reciver
@@ -103,13 +105,19 @@ def CTRL(client_socket, massage , user):
             client_socket.send(f"user '{reciver}' is not online".encode())
             return user
         else :
-            client_socket.send(f"File share request sent to {reciver}".encode())
             print("stuck before socket")
             reciver_socket = Models.online_users[reciver]
             print("stuck before req")
-            fileShareRequest(file_name, user.name, reciver)
+            try:
+                if not fileShareRequest(file_name, user.name, reciver):
+                    client_socket.send(f"file '{file_name}' not found".encode())
+                    return user
+            except Exception as e:
+                client_socket.send(f"Error sharing file: {str(e)}".encode())
+                return user
             print("stuck before send")
             reciver_socket.send(f"User '{user.name}' want share a file with you: {file_name}".encode())
+            client_socket.send(f"File share request sent to {reciver}".encode())
             return user
 
     
@@ -124,6 +132,10 @@ def CTRL(client_socket, massage , user):
             client_socket.send("unexpected error".encode())
             return user
 def DATA(client_socket, massage , user):
+    if len(massage) < 2:
+        client_socket.send("invalid data request".encode())
+        return user
+
     command = massage[1]
     if command =="CHAT":
         receiver = massage[2]
@@ -132,6 +144,12 @@ def DATA(client_socket, massage , user):
         return user
 
     elif command == "ACCEPT_FILE" :
+        if not user:
+            client_socket.send("ERR|ACCEPT_FILE|you must login first".encode())
+            return user
+        if len(massage) < 4:
+            client_socket.send("ERR|ACCEPT_FILE|invalid accept file request".encode())
+            return user
         file_name = massage[2]
         sender = massage[3]
         try:
@@ -141,19 +159,25 @@ def DATA(client_socket, massage , user):
             if sender_socket:
                 sender_socket.send(f"User '{user.name}' accepted your file share request: {file_name}".encode())
         except Exception as e:
-            client_socket.send(f"Error transferring file: {str(e)}".encode())
+            client_socket.send(f"ERR|ACCEPT_FILE|{str(e)}".encode())
             return user
 
         return user
     
     elif command == "REJECT_FILE" :
+        if not user:
+            client_socket.send("ERR|REJECT_FILE|you must login first".encode())
+            return user
+        if len(massage) < 4:
+            client_socket.send("ERR|REJECT_FILE|invalid reject file request".encode())
+            return user
         file_name = massage[2]
         sender = massage[3]
         try:
             remove_share_file(file_name, sender , user.name)
             reciver_socket = Models.online_users[sender]
-            reciver_socket.send(f"You rejected the file share request for '{file_name}' from {sender}.".encode())
-            client_socket.send(f"User '{user.name}' rejected your file share request: {file_name}".encode())
+            client_socket.send(f"You rejected the file share request for '{file_name}' from {sender}.".encode())
+            reciver_socket.send(f"User '{user.name}' rejected your file share request: {file_name}".encode())
         except Exception as e:
             client_socket.send(f"Error rejecting file share request: {str(e)}".encode())
             return user

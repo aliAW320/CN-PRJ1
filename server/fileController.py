@@ -136,15 +136,21 @@ def fileShareRequest(file_name, sender , reciver):
     for file in fileshare :
         if file.file_name == file_name :
             file_path = Path(file.file_path)
-            file_size = file_path.stat().st_size if file_path.exists() else 0
+            if not file_path.exists():
+                raise FileNotFoundError(f"File '{file_name}' was not found on server.")
+            file_size = file_path.stat().st_size
             share_queue.append(sharedFile(file.file_name, file.file_path, sender , reciver, file_size))
+            return True
+    return False
 
 def remove_share_file(file_name, sender , reciver):
+    finded = False
     for shared in share_queue :
         if shared.file_name == file_name and shared.sender == sender and shared.reciver == reciver :
             share_queue.remove(shared)
-        else :
-            raise Exception("Shared file not found in queue.")
+            finded = True
+    if not finded:
+        raise Exception("Shared file not found in queue.")
 
 def send_to_reciver(file_name, sender , reciver):
     for shared in share_queue :

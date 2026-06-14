@@ -238,7 +238,7 @@ def recive_file(client_socket, file_name, sender):
 
                 header_pipe_count = buffer.count(b"|")
 
-                if header_pipe_count >= 4 or buffer.startswith(b"END|"):
+                if header_pipe_count >= 4 or buffer.startswith(b"END|") or buffer.startswith(b"ERR|"):
 
                     break
 
@@ -263,6 +263,10 @@ def recive_file(client_socket, file_name, sender):
                 print(f"[CLIENT] File receive completed for '{file_name}'.")
 
                 break
+
+            if buffer.startswith(b"ERR|"):
+
+                raise Exception(buffer.decode(errors="replace"))
 
            
 
