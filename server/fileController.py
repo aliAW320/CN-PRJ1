@@ -65,7 +65,7 @@ def getfile(client_socket, file_name, file_size, path, user):
             header_end = -1
             pipe_seen = 0
             for index, byte in enumerate(buffer):
-                if byte == 124:  # b'|'
+                if byte == 124:  
                     pipe_seen += 1
                     if pipe_seen == 4:
                         header_end = index + 1
@@ -143,6 +143,8 @@ def remove_share_file(file_name, sender , reciver):
     for shared in share_queue :
         if shared.file_name == file_name and shared.sender == sender and shared.reciver == reciver :
             share_queue.remove(shared)
+        else :
+            raise Exception("Shared file not found in queue.")
 
 def send_to_reciver(file_name, sender , reciver):
     for shared in share_queue :
@@ -153,6 +155,8 @@ def send_to_reciver(file_name, sender , reciver):
             if reciver not in user_file:
                 user_file[reciver] = []
             user_file[reciver].append(fileTP(shared.file_name, shared.file_path))
+        else :
+            raise Exception("Shared file not found in queue.")
 
 def transfer_file(client_socket, file_path, file_name, file_size):
     CHUNK_SIZE = 512

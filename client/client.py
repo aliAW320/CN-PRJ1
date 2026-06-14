@@ -15,9 +15,7 @@ def listen_to_server(client_socket):
             
             data = client_socket.recv(1024).decode()
             if data:
-                print(f"\n{data}\n")
-                if data.startswith("login success"):
-                    user = data.split("")[-1]  
+                print(f"\n{data}\n") 
         except socket.timeout:
             pass
         except ConnectionResetError:

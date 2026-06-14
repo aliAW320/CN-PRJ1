@@ -46,7 +46,7 @@ def CTRL(client_socket, massage , user):
         state , login_massage ,user = Models.User.login(name, password , client_socket)
         if state :
             print(f"[LOGIN] User '{name}' logged in successfully.")
-            client_socket.send(f"login success {user.name}".encode())
+            client_socket.send(f"login success".encode())
             return user
         else:
             print(f"[LOGIN] Failed to log in user  '{name}' , {login_massage}")
@@ -137,20 +137,26 @@ def DATA(client_socket, massage , user):
         try:
             send_to_reciver(file_name, sender, user.name)
             client_socket.send(f"File '{file_name}' transfer completed.".encode())
+            sender_socket = Models.online_users.get(sender)
+            if sender_socket:
+                sender_socket.send(f"User '{user.name}' accepted your file share request: {file_name}".encode())
         except Exception as e:
             client_socket.send(f"Error transferring file: {str(e)}".encode())
             return user
-        sender_socket = Models.online_users.get(sender)
-        if sender_socket:
-            sender_socket.send(f"User '{user.name}' accepted your file share request: {file_name}".encode())
+
         return user
     
     elif command == "REJECT_FILE" :
         file_name = massage[2]
         sender = massage[3]
-        remove_share_file(file_name, sender , user.name)
-        reciver_socket = Models.online_users[reciver]
-        sender_socket.send(f"User '{user.name}' rejected your file share request: {file_name}".encode())
+        try:
+            remove_share_file(file_name, sender , user.name)
+            reciver_socket = Models.online_users[sender]
+            reciver_socket.send(f"You rejected the file share request for '{file_name}' from {sender}.".encode())
+            client_socket.send(f"User '{user.name}' rejected your file share request: {file_name}".encode())
+        except Exception as e:
+            client_socket.send(f"Error rejecting file share request: {str(e)}".encode())
+            return user
         return user
     
 
